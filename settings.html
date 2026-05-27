@@ -1,19 +1,44 @@
-<div class="cmp-settings cpi-settings">
+<style>
+    .mfa-settings { margin-top: 10px; }
+    .mfa-section { margin-bottom: 12px; }
+    .mfa-section h4 { margin: 8px 0 6px; color: var(--SmartThemeBodyColor); font-size: 14px; }
+    .mfa-status { font-weight: 700; margin-top: 6px; font-size: 13px; }
+    .mfa-dim { color: #999; font-size: 12px; display: block; }
+    .mfa-toggle { margin-bottom: 8px !important; }
+    .mfa-toggle-desc { margin-left: 24px; }
+    .mfa-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .mfa-row label { font-size: 12px; white-space: nowrap; min-width: 90px; }
+    .mfa-settings select.text_pole { width: 100%; font-size: 13px; margin-top: 2px; }
+    .mfa-status-card { border-left: 3px solid var(--SmartThemeQuoteColor); padding-left: 10px; }
+    .mfa-log-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .mfa-button-row { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    .mfa-button-row .menu_button { width: auto; padding: 2px 8px; font-size: 11px; }
+    .mfa-log-box {
+        background: #0d1117; border: 1px solid #333; border-radius: 6px; padding: 8px;
+        font-family: Consolas, "Courier New", monospace; font-size: 11px; line-height: 1.5;
+        max-height: 500px; overflow-y: auto; overflow-x: hidden; word-break: break-word;
+    }
+    .mfa-fold-btn { font-size: 10px; user-select: none; }
+    .mfa-fold-btn:hover { text-decoration: underline; }
+    .mfa-fold-long { background: #161b22; border-left: 2px solid #30363d; padding: 4px 8px; margin: 4px 0; }
+</style>
+
+<div class="mfa-settings cpi-settings">
     <div class="inline-drawer">
         <div class="inline-drawer-toggle inline-drawer-header">
             <b>MFA - Message Format Adapter</b>
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
-        <div class="inline-drawer-content">
+        <div class="inline-drawer-content mfa-content" style="display:block;">
 
-            <div class="cpi-section cmp-status-card">
-                <p id="cpi_status" class="cpi-status">Loading...</p>
-                <small class="cpi-dim">Uses the Custom endpoint URL and headers from the active SillyTavern connection profile.</small>
+            <div class="mfa-section mfa-status-card">
+                <p id="cpi_status" class="mfa-status">Loading...</p>
+                <small class="mfa-dim">Uses the Custom endpoint URL and headers from the active SillyTavern connection profile.</small>
             </div>
 
             <hr class="sysHR" />
 
-            <div class="cpi-section">
+            <div class="mfa-section">
                 <h4><i class="fa-solid fa-route"></i> Body processing mode</h4>
                 <select id="cpi_endpoint" class="text_pole">
                     <option value="anthropic">Anthropic Messages body</option>
@@ -22,19 +47,19 @@
                     <option value="responses">Responses body conversion</option>
                     <option value="passthrough">Passthrough cleanup only</option>
                 </select>
-                <small class="cpi-dim">The request is still sent to the profile's custom URL. This only controls message/body shaping.</small>
+                <small class="mfa-dim">The request is still sent to the profile's custom URL. This only controls message/body shaping.</small>
             </div>
 
             <hr class="sysHR" />
 
-            <div class="cpi-section cpi-thinking-only">
+            <div class="mfa-section cpi-thinking-only">
                 <h4><i class="fa-solid fa-brain"></i> Thinking options</h4>
-                <div class="cpi-version-row">
+                <div class="mfa-row">
                     <label for="cpi_adaptive_thinking">Adaptive</label>
                     <input id="cpi_adaptive_thinking" type="checkbox" />
-                    <small class="cpi-dim">Let compatible Anthropic models choose the thinking budget.</small>
+                    <small class="mfa-dim">Let compatible Anthropic models choose the thinking budget.</small>
                 </div>
-                <div class="cpi-version-row cpi-budget-row">
+                <div class="mfa-row cpi-budget-row">
                     <label for="cpi_thinking_budget">Budget tokens</label>
                     <input id="cpi_thinking_budget" type="number" class="text_pole" value="10000" min="1000" max="100000" step="1000" />
                 </div>
@@ -42,61 +67,61 @@
 
             <hr class="sysHR" />
 
-            <div class="cpi-section">
+            <div class="mfa-section">
                 <h4><i class="fa-solid fa-sliders"></i> Extension</h4>
 
-                <label class="checkbox_label cpi-toggle">
+                <label class="checkbox_label mfa-toggle">
                     <input id="cpi_enabled" type="checkbox" checked />
                     <span>Enable processor</span>
-                    <small class="cpi-dim cpi-toggle-desc">When off, SillyTavern sends custom endpoint requests unchanged.</small>
+                    <small class="mfa-dim mfa-toggle-desc">When off, SillyTavern sends custom endpoint requests unchanged.</small>
                 </label>
 
-                <label class="checkbox_label cpi-toggle">
+                <label class="checkbox_label mfa-toggle">
                     <input id="cpi_basic_auth_compat" type="checkbox" />
                     <span>Use credentials include</span>
-                    <small class="cpi-dim cpi-toggle-desc">Compatibility toggle for endpoints that rely on browser credentials.</small>
+                    <small class="mfa-dim mfa-toggle-desc">Compatibility toggle for endpoints that rely on browser credentials.</small>
                 </label>
             </div>
 
             <hr class="sysHR" />
 
-            <div class="cpi-section cpi-openai-only">
+            <div class="mfa-section cpi-openai-only">
                 <h4><i class="fa-solid fa-wrench"></i> OpenAI-style corrections</h4>
 
-                <label class="checkbox_label cpi-toggle">
+                <label class="checkbox_label mfa-toggle">
                     <input id="cpi_remove_prefill" type="checkbox" checked />
                     <span>Remove assistant prefill</span>
                 </label>
 
-                <label class="checkbox_label cpi-toggle">
+                <label class="checkbox_label mfa-toggle">
                     <input id="cpi_trim_assistant" type="checkbox" checked />
                     <span>Trim assistant trailing whitespace</span>
                 </label>
 
-                <label class="checkbox_label cpi-toggle">
+                <label class="checkbox_label mfa-toggle">
                     <input id="cpi_force_last_user" type="checkbox" checked />
                     <span>Force last message to user</span>
-                    <small class="cpi-dim cpi-toggle-desc">Keeps the existing first/last user correction behavior available.</small>
+                    <small class="mfa-dim mfa-toggle-desc">Keeps the existing first/last user correction behavior available.</small>
                 </label>
             </div>
 
             <hr class="sysHR" />
 
-            <div class="cpi-section">
+            <div class="mfa-section">
                 <h4><i class="fa-solid fa-terminal"></i> Debug log</h4>
-                <div class="cpi-log-toolbar">
+                <div class="mfa-log-toolbar">
                     <label class="checkbox_label">
                         <input id="cpi_debug_log" type="checkbox" checked />
                         <span>Show log</span>
                     </label>
-                    <div class="cmp-button-row">
+                    <div class="mfa-button-row">
                         <input id="cpi_fold_all" class="menu_button" type="button" value="Toggle fold" />
                         <input id="cpi_scroll_bottom" class="menu_button" type="button" value="Bottom" />
                         <input id="cpi_clear_log" class="menu_button" type="button" value="Clear" />
                     </div>
                 </div>
                 <div id="cpi_log_panel">
-                    <div id="cpi_log_content" class="cpi-log-box">
+                    <div id="cpi_log_content" class="mfa-log-box cpi-log-box">
                         <div style="color:#666;">Waiting for requests...</div>
                     </div>
                 </div>

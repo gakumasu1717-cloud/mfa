@@ -5,6 +5,7 @@ import { saveSettingsDebounced } from "../../../../script.js";
 
 const extensionName = "mfa";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
+const settingsHtmlUrl = new URL("./settings.html", import.meta.url).href;
 
 const defaultSettings = {
     enabled: true,
@@ -33,8 +34,8 @@ const DebugLog = {
         const s = getSettings();
 
         // ?붾쾭洹?爰쇱졇?덉쑝硫?ERROR/WARN留?肄섏넄??異쒕젰?섍퀬 ??        if (!s.debugLog) {
-            if (level === "ERROR") console.error(`[CMP] ${args.join(" ")}`);
-            else if (level === "WARN") console.warn(`[CMP] ${args.join(" ")}`);
+            if (level === "ERROR") console.error(`[MFA] ${args.join(" ")}`);
+            else if (level === "WARN") console.warn(`[MFA] ${args.join(" ")}`);
             return;
         }
 
@@ -46,9 +47,9 @@ const DebugLog = {
         this.entries.push({ time, level, msg });
         if (this.entries.length > LOG_MAX) this.entries.shift();
 
-        if (level === "ERROR") console.error(`[CMP] ${msg}`);
-        else if (level === "WARN") console.warn(`[CMP] ${msg}`);
-        else console.log(`[CMP] ${msg}`);
+        if (level === "ERROR") console.error(`[MFA] ${msg}`);
+        else if (level === "WARN") console.warn(`[MFA] ${msg}`);
+        else console.log(`[MFA] ${msg}`);
 
         // ?붾컮?댁뒪 ?뚮뜑留?(200ms ??以묐났 ?몄텧 諛⑹?)
         if (!this._renderTimer) {
@@ -898,7 +899,7 @@ const Interceptor = {
             } catch (e) {
                 DebugLog.error("Anthropic ?묐떟 蹂???ㅽ뙣:", String(e));
                 return new Response(JSON.stringify({
-                    choices: [{ message: { role: "assistant", content: `[CMP] ?묐떟 蹂???ㅻ쪟: ${e.message}` }, index: 0, finish_reason: "stop" }],
+                    choices: [{ message: { role: "assistant", content: `[MFA] ?묐떟 蹂???ㅻ쪟: ${e.message}` }, index: 0, finish_reason: "stop" }],
                 }), { status: 200, headers: { "Content-Type": "application/json" } });
             }
         }
@@ -1094,7 +1095,7 @@ const Interceptor = {
             } catch (e) {
                 DebugLog.error("Anthropic ?묐떟 JSON ?뚯떛 ?ㅽ뙣:", String(e));
                 return new Response(JSON.stringify({
-                    choices: [{ message: { role: "assistant", content: "[CMP] ?묐떟 ?뚯떛 ?ㅽ뙣" }, index: 0, finish_reason: "stop" }],
+                    choices: [{ message: { role: "assistant", content: "[MFA] ?묐떟 ?뚯떛 ?ㅽ뙣" }, index: 0, finish_reason: "stop" }],
                 }), { status: 200, headers: { "Content-Type": "application/json" } });
             }
 
@@ -1399,7 +1400,7 @@ const Interceptor = {
                 return await self.interceptAndSend(requestBody);
             } catch (error) {
                 DebugLog.error("?명꽣?됲듃 ?ㅽ뙣:", String(error));
-                toastr.error(`[CMP] ${error.message}`);
+                toastr.error(`[MFA] ${error.message}`);
                 try {
                     return await self.originalFetch.apply(window, args);
                 } catch {
@@ -1451,7 +1452,14 @@ function updateStatus() {
 // ============================================================
 // 珥덇린??// ============================================================
 jQuery(async () => {
-    const html = await $.get(`${extensionFolderPath}/settings.html`);
+    let html = "";
+    try {
+        html = await $.get(settingsHtmlUrl);
+    } catch (error) {
+        console.error("[MFA] Failed to load settings.html:", error);
+        html = `<div class="mfa-settings"><b>MFA - Message Format Adapter</b><p style="color:#f44336;">Failed to load settings.html from ${settingsHtmlUrl}</p></div>`;
+    }
+
     $("#extensions_settings").append(html);
 
     $("#cpi_enabled").on("change", function () {
@@ -1459,7 +1467,7 @@ jQuery(async () => {
         s.enabled = $(this).prop("checked");
         saveSettings();
         s.enabled ? Interceptor.install() : Interceptor.uninstall();
-        s.enabled ? toastr.success("[CMP] Enabled") : toastr.info("[CMP] Disabled");
+        s.enabled ? toastr.success("[MFA] Enabled") : toastr.info("[MFA] Disabled");
         updateStatus();
     });
 
@@ -1524,7 +1532,7 @@ jQuery(async () => {
         s.debugLog ? $("#cpi_log_panel").slideDown(150) && DebugLog.render() : $("#cpi_log_panel").slideUp(150);
     });
 
-    $("#cpi_clear_log").on("click", () => { DebugLog.clear(); toastr.info("[CMP] Log cleared"); });
+    $("#cpi_clear_log").on("click", () => { DebugLog.clear(); toastr.info("[MFA] Log cleared"); });
 
     $("#cpi_log_content").on("click", ".cpi-fold-btn", function () {
         const fold = $(this).closest(".cpi-fold");
@@ -1580,5 +1588,5 @@ jQuery(async () => {
 
     if (s.enabled) Interceptor.install();
     updateStatus();
-    DebugLog.info("CMP loaded");
+    DebugLog.info("MFA loaded");
 });
