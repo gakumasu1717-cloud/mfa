@@ -1,9 +1,9 @@
-﻿// CMP - Custom Message Processor
+﻿// MFA - Message Format Adapter
 // Processes SillyTavern custom endpoint requests while preserving the selected custom URL and API headers.
 import { extension_settings } from "../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../script.js";
 
-const extensionName = "CMP";
+const extensionName = "mfa";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
 const defaultSettings = {
