@@ -5,7 +5,11 @@ import { saveSettingsDebounced } from "../../../../script.js";
 
 const extensionName = "mfa";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
-const settingsHtmlUrl = new URL("./settings.html", import.meta.url).href;
+const settingsPathCandidates = [
+    `${extensionFolderPath}/settings.html`,
+    "scripts/extensions/third-party/mfa-main/settings.html",
+    "scripts/extensions/third-party/MFA/settings.html",
+];
 
 const defaultSettings = {
     enabled: true,
@@ -184,6 +188,18 @@ function getSettings() {
 }
 
 function saveSettings() { saveSettingsDebounced(); }
+
+async function loadSettingsHtml() {
+    let lastError = null;
+    for (const path of settingsPathCandidates) {
+        try {
+            return await $.get(path);
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw lastError || new Error("settings.html not found");
+}
 
 function getCustomUrl(requestBody) {
     const url = String(requestBody?.custom_url || "").trim();
@@ -1452,14 +1468,7 @@ function updateStatus() {
 // ============================================================
 // 珥덇린??// ============================================================
 jQuery(async () => {
-    let html = "";
-    try {
-        html = await $.get(settingsHtmlUrl);
-    } catch (error) {
-        console.error("[MFA] Failed to load settings.html:", error);
-        html = `<div class="mfa-settings"><b>MFA - Message Format Adapter</b><p style="color:#f44336;">Failed to load settings.html from ${settingsHtmlUrl}</p></div>`;
-    }
-
+    const html = await loadSettingsHtml();
     $("#extensions_settings").append(html);
 
     $("#cpi_enabled").on("change", function () {
