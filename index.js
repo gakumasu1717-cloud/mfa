@@ -37,7 +37,7 @@ const DebugLog = {
     add(level, ...args) {
         const s = getSettings();
 
-        // ?붾쾭洹?爰쇱졇?덉쑝硫?ERROR/WARN留?肄섏넄??異쒕젰?섍퀬 ??        if (!s.debugLog) {
+        if (!s.debugLog) {
             if (level === "ERROR") console.error(`[MFA] ${args.join(" ")}`);
             else if (level === "WARN") console.warn(`[MFA] ${args.join(" ")}`);
             return;
