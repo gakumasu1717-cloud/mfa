@@ -2,6 +2,7 @@
 // 연결 프로필의 custom 엔드포인트로 메시지 포맷만 변환해 전송
 import { extension_settings } from "../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../script.js";
+import { findSecret, secret_state, SECRET_KEYS } from "../../../secrets.js";
 
 const extensionName = "mfa";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
@@ -177,6 +178,28 @@ function escapeHtmlBr(s) {
 // ============================================================
 /** 토큰: SillyTavern 연결 프로필의 API key에서 읽기 */
 let _cachedApiKey = "";
+let _secretReadDisabled = false;  // allowKeysExposure 꺼져있으면 재시도 안 함 (403 스팸 방지)
+
+/** ST 서버에 저장된 custom API key를 자동으로 읽어옴 (config.yaml allowKeysExposure: true 필요) */
+async function fetchCustomSecret() {
+    if (_secretReadDisabled) return "";
+    // 저장된 custom 키가 있을 때만 시도
+    if (!(secret_state && secret_state[SECRET_KEYS.CUSTOM])) return "";
+    try {
+        const val = await findSecret(SECRET_KEYS.CUSTOM);  // id 생략 → 활성 키
+        if (val && typeof val === "string" && val.trim()) {
+            _cachedApiKey = val.trim();
+            DebugLog.info(`연결 프로필 키 자동 로드 성공 (${_cachedApiKey.substring(0, 8)}...)`);
+            return _cachedApiKey;
+        }
+        // 값이 안 옴 = 키 노출 차단(403) 등 → 더 시도 안 함
+        _secretReadDisabled = true;
+        DebugLog.warn("연결 프로필 키 자동 로드 실패 — config.yaml의 allowKeysExposure: true 필요 (또는 확장에 키 직접 입력)");
+    } catch {
+        _secretReadDisabled = true;
+    }
+    return "";
+}
 
 function getToken(requestBody) {
     // 0. MFA 설정에 직접 입력한 키 (최우선)
@@ -1442,8 +1465,9 @@ const Interceptor = {
             // 전체 on/off: custom_url 이 있으면 처리 (연결 프로필 엔드포인트로 전송)
             if (!(requestBody.custom_url || "").trim()) return self.originalFetch.apply(window, args);
 
-            const token = getToken(requestBody);
-            if (!token) { DebugLog.warn("토큰 없음 — 연결 프로필 API key 필요"); return self.originalFetch.apply(window, args); }
+            let token = getToken(requestBody);
+            if (!token) token = await fetchCustomSecret();  // ST 저장 키 자동 로드 시도
+            if (!token) { DebugLog.warn("토큰 없음 — config.yaml allowKeysExposure: true 설정 또는 확장에 키 입력 필요"); return self.originalFetch.apply(window, args); }
 
             DebugLog.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             DebugLog.info("요청 인터셉트!");
