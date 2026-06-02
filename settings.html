@@ -46,14 +46,19 @@
 
             <hr class="sysHR" />
 
-            <!-- 엔드포인트 경로 보정 -->
+            <!-- 엔드포인트 (경로 직접 지정 + 자동 보정) -->
             <div class="mfa-section">
                 <h4><i class="fa-solid fa-link"></i> 엔드포인트</h4>
-                <small class="mfa-dim" style="display:block;margin-bottom:6px;">전송 대상은 연결 프로필의 custom URL을 <b>그대로</b> 사용합니다.</small>
+                <small class="mfa-dim" style="display:block;margin-bottom:6px;">기본 전송 대상은 연결 프로필의 custom URL입니다. 아래에서 경로/주소를 직접 지정하거나 자동 보정할 수 있습니다.</small>
+
+                <label for="mfa_endpoint_path" style="font-size:12px;display:block;margin-bottom:3px;">엔드포인트 경로 / URL 직접 지정 (선택)</label>
+                <input id="mfa_endpoint_path" type="text" class="text_pole" style="font-size:12px;width:100%;" placeholder="예: /v1/messages  또는  https://host/v1/chat/completions" />
+                <small class="mfa-dim" style="display:block;margin:3px 0 10px;">입력하면 <b>최우선 적용</b>. <b>/</b>로 시작하면 custom URL 뒤에 붙이고, <b>http(s)://</b>면 그 주소로 통째로 보냅니다. 비우면 아래 경로 보정/그대로 사용.</small>
+
                 <label class="checkbox_label mfa-toggle">
                     <input id="mfa_path_correction" type="checkbox" />
-                    <span>경로 보정</span>
-                    <small class="mfa-dim mfa-toggle-desc">ON: 포맷에 맞는 경로(/v1/messages 등)를 custom URL에 자동 추가</small>
+                    <span>경로 보정 (자동)</span>
+                    <small class="mfa-dim mfa-toggle-desc">위 칸이 비어있을 때만 동작 · ON: 포맷에 맞는 경로(/chat/completions, /v1/messages 등) 자동 추가 · OFF: custom URL 그대로</small>
                 </label>
             </div>
 
@@ -93,9 +98,9 @@
 
             <hr class="sysHR" />
 
-            <!-- OpenAI 전용 보정 옵션 -->
+            <!-- 메시지 보정 (경로 보정과 별개) -->
             <div class="mfa-section mfa-openai-only">
-                <h4><i class="fa-solid fa-wrench"></i> 보정 옵션 (OpenAI/Responses 전용)</h4>
+                <h4><i class="fa-solid fa-wrench"></i> 메시지 보정 (OpenAI/Responses 전용)</h4>
 
                 <label class="checkbox_label mfa-toggle">
                     <input id="mfa_remove_prefill" type="checkbox" checked />

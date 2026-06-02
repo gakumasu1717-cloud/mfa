@@ -18,6 +18,7 @@ const defaultSettings = {
     thinkingBudget: 10000,  // thinking budget_tokens
     adaptiveThinking: false, // adaptive thinking (Opus 4.6+)
     pathCorrection: false,   // 엔드포인트 경로 자동 보정 (custom_url 에 포맷별 경로 추가)
+    endpointPath: "",        // 엔드포인트 경로/URL 직접 지정 (최우선, 비우면 보정/그대로)
 
     token: "",  // 수동 입력 API key (선택, 비우면 연결 프로필 키 사용)
     tokens: [],  // 저장된 key 목록 [{name, value}]
@@ -380,17 +381,41 @@ function convertToAnthropicFormat(messages, model, params) {
 // ST(OpenAI-style) 요청/응답을 Responses 포맷으로 변환
 // ============================================================
 function buildTargetUrl(endpoint, customUrl) {
+    const s = getSettings();
     const raw = (customUrl || "").trim();
-    // 보정 OFF: 연결 프로필의 custom_url 을 그대로 사용 (무조건 custom)
-    if (!getSettings().pathCorrection) return raw;
 
-    // 보정 ON: 포맷에 맞는 경로를 자동으로 덧붙임 (이미 있으면 그대로)
+    // 0) 엔드포인트 직접 지정 (최우선, 경로 보정 토글과 독립적으로 동작)
+    const manual = (s.endpointPath || "").trim();
+    if (manual) {
+        if (/^https?:\/\//i.test(manual)) return manual;        // 절대 URL → 통째로 사용
+        const baseM = raw.replace(/\/+$/, "");
+        const path = manual.startsWith("/") ? manual : "/" + manual;
+        return baseM.endsWith(path) ? baseM : baseM + path;     // custom URL 뒤에 지정 경로 추가
+    }
+
+    // 보정 OFF: 연결 프로필의 custom_url 을 그대로 사용 (무조건 custom)
+    if (!s.pathCorrection) return raw;
+
+    // 보정 ON: 포맷에 맞는 엔드포인트 경로를 자동으로 덧붙임.
+    // SillyTavern 본체와 동일하게 base URL(custom_url) 뒤에 경로를 붙인다.
+    //   - OpenAI/패스스루:  {base}/chat/completions   (ST custom 소스와 동일)
+    //   - Anthropic:        {base}/v1/messages         (base가 /v1로 끝나면 /messages 만)
+    //   - Responses:        {base}/responses
+    // 이미 경로가 붙어 있으면 중복 추가하지 않는다.
     const base = raw.replace(/\/+$/, "");
-    let path;
-    if (endpoint === "anthropic" || endpoint === "anthropic-thinking") path = "/v1/messages";
-    else if (endpoint === "responses") path = "/responses";
-    else path = "/chat/completions";
-    return base.endsWith(path) ? base : base + path;
+
+    if (endpoint === "anthropic" || endpoint === "anthropic-thinking") {
+        if (/\/(v1\/)?messages$/.test(base)) return base;   // 이미 .../messages or .../v1/messages
+        if (/\/v1$/.test(base)) return base + "/messages";  // .../v1 → .../v1/messages
+        return base + "/v1/messages";
+    }
+    if (endpoint === "responses") {
+        if (/\/responses$/.test(base)) return base;
+        return base + "/responses";
+    }
+    // openai / passthrough
+    if (/\/chat\/completions$/.test(base)) return base;
+    return base + "/chat/completions";
 }
 
 function previewText(text, max = 160) {
@@ -695,7 +720,10 @@ const Interceptor = {
         const url = buildTargetUrl(s.endpoint, customUrl);
 
         DebugLog.info(`엔드포인트: ${s.endpoint}${isThinking ? " (추론)" : ""} → ${url}`);
-        DebugLog.info(`경로 보정: ${s.pathCorrection ? "ON" : "OFF (custom_url 그대로)"}`);
+        const _mode = (s.endpointPath || "").trim()
+            ? "직접 지정"
+            : (s.pathCorrection ? "경로 보정 ON" : "custom_url 그대로");
+        DebugLog.info(`경로 결정 방식: ${_mode}`);
 
         const headers = { "Content-Type": "application/json" };
         if (isAnthropic) {
@@ -1574,6 +1602,10 @@ jQuery(async () => {
         const s = getSettings(); s.pathCorrection = $(this).prop("checked"); saveSettings();
         DebugLog.info("경로 보정:", s.pathCorrection ? "ON" : "OFF");
     });
+    $("#mfa_endpoint_path").on("input", function () {
+        const s = getSettings(); s.endpointPath = $(this).val().trim(); saveSettings();
+        DebugLog.info("엔드포인트 직접 지정:", s.endpointPath || "(없음 — 보정/그대로)");
+    });
     $("#mfa_remove_prefill").on("change", function () {
         const s = getSettings(); s.removePrefill = $(this).prop("checked"); saveSettings();
         DebugLog.info("프리필 제거:", s.removePrefill ? "ON" : "OFF");
@@ -1707,6 +1739,7 @@ jQuery(async () => {
     $("#mfa_basic_auth_compat").prop("checked", s.basicAuthCompat);
     $("#mfa_debug_log").prop("checked", s.debugLog);
     $("#mfa_path_correction").prop("checked", s.pathCorrection);
+    $("#mfa_endpoint_path").val(s.endpointPath || "");
 
     $(".mfa-openai-only").toggle(s.endpoint === "openai" || s.endpoint === "responses");
     $(".mfa-thinking-only").toggle(s.endpoint === "anthropic-thinking");
